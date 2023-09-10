@@ -7,14 +7,15 @@ from safetensors.torch import save_file
 import numpy as np
 import random
 
-from modules import script_callbacks
+from modules import script_callbacksч
 
 def on_ui_tabs():
     
     with gr.Blocks(analytics_enabled=False) as mutators:
-        gr.Interface(fn=mutate_negative, inputs=["text", "text"], outputs="text",title="mutate negative")
-        gr.Interface(fn=mutate_random_merge, inputs=["text","text","text"], outputs="text",title="mutate random merge")
+        gr.Interface(fn=mutate_negative, inputs=["text", "text"], outputs="text",title="to negative")
+        gr.Interface(fn=mutate_random_merge, inputs=["text","text","text"], outputs="text",title="random merge")
         gr.Interface(fn=merge_by_name, inputs=["text","text","text","text"], outputs="text",title="merge by name")
+        gr.Interface(fn=get_difference, inputs=["text","text","text","number"], outputs="text",title="get difference (only same size)")
 
         return [(mutators, "Mutator", "mutator_tab")]
 
@@ -77,6 +78,27 @@ def merge_by_name(input_path1,input_path2,output_path,names):
     save_file(tensors1, output_path)
 
     return f"Done, merged {merged} tensors."
+
+def get_difference(input_path1,input_path2,output_path,alpha):
+    tensors1 = {}
+    tensors2 = {}
+    with safetensors.safe_open(input_path1, framework="pt", device="cpu") as f:
+        for key in f.keys():
+            tensors1[key] = f.get_tensor(key)
+    
+    with safetensors.safe_open(input_path2, framework="pt", device="cpu") as f:
+        for key in f.keys():
+            tensors2[key] = f.get_tensor(key)
+    
+    for key in tensors1:
+        param1 = tensors1[key]
+        param2 = tensors2[key]
+        param = (param1 - param2) * alpha
+        tensors1[key] = param
+        print(param)
+    save_file(tensors1, output_path)
+
+    return f"Done."
            
 
   

@@ -84,7 +84,7 @@ def corrupt_only_n_tensors(input_path, n, output_path):
             tensors[key] = f.get_tensor(key)
 
     keys = list(tensors.keys())
-    for i in range(n):
+    for i in range(int(n))  :
         random_key = random.choice(keys)
         param = tensors[random_key]
         noise = torch.from_numpy(np.random.normal(-noise_multiplayer, noise_multiplayer, size=param.shape)).float()
