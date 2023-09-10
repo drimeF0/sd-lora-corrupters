@@ -9,10 +9,15 @@ import random
 
 from modules import script_callbacks
 
-
+noise_multiplayer = 0.01
 def on_ui_tabs():
     with gr.Blocks(analytics_enabled=False) as ui_component:
-        gr.Interface(fn=corrupt_all, inputs=["text","text"] outputs="text",title="corrupt all")
+        gr.Interface(fn=corrupt_all, inputs=["text","text"], outputs="text",title="corrupt all")
+        gr.Interface(fn=get_layers, inputs=["text"], outputs="text",title="get layers")
+        gr.Interface(fn=corrupt_by_name, inputs=["text", "text", "text"], outputs="text",title="corrupt by name")
+        gr.Interface(fn=corrupt_only_one_tensor, inputs=["text", "text"], outputs="text",title="corrupt only one tensor")
+        gr.Interface(fn=corrupt_only_n_tensors, inputs=["text", "number", "text"], outputs="text",title="corrupt only n tensors")
+        gr.Interface(fn=set_noise_multiplayer, inputs=["number"], outputs="text",title="set noise multiplayer")
 
         return [(ui_component, "Corrupter", "corrupter_tab")]
 
@@ -24,9 +29,78 @@ def corrupt_all(input_path,output_path):
 
     for key in tensors:
         param = tensors[key]
-        noise = torch.from_numpy(np.random.normal(-0.01, 0.01, size=param.shape)).float()
+        noise = torch.from_numpy(np.random.normal(-noise_multiplayer, noise_multiplayer, size=param.shape)).float()
         param += noise
     save_file(tensors, output_path)
     return "Done"
+
+def get_layers(input_path):
+    tensors = {}
+    keys = ""
+    with safetensors.safe_open(input_path, framework="pt", device="cpu") as f:
+        for key in f.keys():
+            tensors[key] = f.get_tensor(key)
+    for key in tensors.keys():
+        keys += key + "\n"
+    return keys
+
+def corrupt_by_name(input_path, name, output_path):
+    name = name.split("###")
+    tensors = {}
+
+    with safetensors.safe_open(input_path, framework="pt", device="cpu") as f:
+        for key in f.keys():
+            tensors[key] = f.get_tensor(key)
+    for key in tensors:
+        flag = False
+        for n in name:
+            if n in key:
+                flag = True
+        if not flag:
+            continue
+        param = tensors[key]
+        noise = torch.from_numpy(np.random.normal(-noise_multiplayer, noise_multiplayer, size=param.shape)).float()
+        param += noise
+    save_file(tensors,output_path)
+
+    return "Done."
+
+def corrupt_only_one_tensor(input_path, output_path):
+    tensors = {}
+    with safetensors.safe_open(input_path, framework="pt", device="cpu") as f:
+        for key in f.keys():
+            tensors[key] = f.get_tensor(key)
+
+    keys = tensors.keys()
+    random_key = random.choice(keys)
+    param = tensors[random_key]
+    noise = torch.from_numpy(np.random.normal(-noise_multiplayer, noise_multiplayer, size=param.shape)).float()
+    param += noise
+    save_file(tensors,output_path)
+
+    return "Done."
+
+def corrupt_only_n_tensors(input_path, n, output_path):
+    #@title corrupt only one tensor
+    tensors = {}
+    with safetensors.safe_open(input_path, framework="pt", device="cpu") as f:
+        for key in f.keys():
+            tensors[key] = f.get_tensor(key)
+
+    keys = tensors.keys()
+    random_key = random.choice(keys)
+    param = tensors[random_key]
+    noise = torch.from_numpy(np.random.normal(-noise_multiplayer, noise_multiplayer, size=param.shape)).float()
+    param += noise
+    save_file(tensors,output_path)
+
+    return "Done."
+
+def set_noise_multiplayer(new_noise_multiplayer):
+    global noise_multiplayer
+    noise_multiplayer = new_noise_multiplayer
+    return f"Noise multiplayer set to {noise_multiplayer}"
+
+  
 
 script_callbacks.on_ui_tabs(on_ui_tabs)
