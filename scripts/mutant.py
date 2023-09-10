@@ -12,6 +12,8 @@ from modules import script_callbacksч
 def on_ui_tabs():
     
     with gr.Blocks(analytics_enabled=False) as mutators:
+        gr.Interface(fn=get_loras, inputs=["text"], outputs="text",title="get loras")
+        gr.Interface(fn=get_layers, inputs=["text"], outputs="text",title="get layers")
         gr.Interface(fn=mutate_negative, inputs=["text", "text"], outputs="text",title="to negative")
         gr.Interface(fn=mutate_random_merge, inputs=["text","text","text"], outputs="text",title="random merge")
         gr.Interface(fn=merge_by_name, inputs=["text","text","text","text"], outputs="text",title="merge by name")
@@ -19,6 +21,27 @@ def on_ui_tabs():
 
         return [(mutators, "Mutator", "mutator_tab")]
 
+
+
+def get_loras(self, path):
+    if not path:
+        path = "/content/something/models/Lora/"
+        print("No path given, using default: " + path)
+    
+    loras = []
+    for file in os.listdir(path):
+        loras.append(file)
+    return "\n".join(loras)
+
+def get_layers(input_path):
+    tensors = {}
+    keys = ""
+    with safetensors.safe_open(input_path, framework="pt", device="cpu") as f:
+        for key in f.keys():
+            tensors[key] = f.get_tensor(key)
+    for key in tensors.keys():
+        keys += key + "\n"
+    return keys
 
 
 def mutate_negative(input_path, output_path):

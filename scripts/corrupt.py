@@ -12,8 +12,9 @@ from modules import script_callbacks
 noise_multiplayer = 0.01
 def on_ui_tabs():
     with gr.Blocks(analytics_enabled=False) as corrupters:
-        gr.Interface(fn=corrupt_all, inputs=["text","text"], outputs="text",title="corrupt all")
+        gr.Interface(fn=get_loras, inputs=["text"], outputs="text",title="get loras")
         gr.Interface(fn=get_layers, inputs=["text"], outputs="text",title="get layers")
+        gr.Interface(fn=corrupt_all, inputs=["text","text"], outputs="text",title="corrupt all")
         gr.Interface(fn=corrupt_by_name, inputs=["text", "text", "text"], outputs="text",title="corrupt by name")
         gr.Interface(fn=corrupt_only_one_tensor, inputs=["text", "text"], outputs="text",title="corrupt only one tensor")
         gr.Interface(fn=corrupt_only_n_tensors, inputs=["text", "number", "text"], outputs="text",title="corrupt only n tensors")
@@ -21,6 +22,17 @@ def on_ui_tabs():
 
 
         return [(corrupters, "Corrupter", "corrupter_tab")]
+
+def get_loras(self, path):
+    if not path:
+        path = "/content/something/models/Lora/"
+        print("No path given, using default: " + path)
+    
+    loras = []
+    for file in os.listdir(path):
+        loras.append(file)
+    return "\n".join(loras)
+
 
 def corrupt_all(input_path,output_path):
     tensors = {}
