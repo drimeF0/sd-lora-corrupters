@@ -45,7 +45,7 @@ def get_layers(input_path):
     return keys
 
 def corrupt_by_name(input_path, name, output_path):
-    name = name.split("###")
+    name = name.split("\n")
     tensors = {}
 
     with safetensors.safe_open(input_path, framework="pt", device="cpu") as f:
@@ -71,7 +71,7 @@ def corrupt_only_one_tensor(input_path, output_path):
         for key in f.keys():
             tensors[key] = f.get_tensor(key)
 
-    keys = tensors.keys()
+    keys = list(tensors.keys())
     random_key = random.choice(keys)
     param = tensors[random_key]
     noise = torch.from_numpy(np.random.normal(-noise_multiplayer, noise_multiplayer, size=param.shape)).float()
@@ -81,18 +81,18 @@ def corrupt_only_one_tensor(input_path, output_path):
     return "Done."
 
 def corrupt_only_n_tensors(input_path, n, output_path):
-    #@title corrupt only one tensor
     tensors = {}
     with safetensors.safe_open(input_path, framework="pt", device="cpu") as f:
         for key in f.keys():
             tensors[key] = f.get_tensor(key)
 
-    keys = tensors.keys()
-    random_key = random.choice(keys)
-    param = tensors[random_key]
-    noise = torch.from_numpy(np.random.normal(-noise_multiplayer, noise_multiplayer, size=param.shape)).float()
-    param += noise
-    save_file(tensors,output_path)
+    keys = list(tensors.keys())
+    for i in range(n):
+        random_key = random.choice(keys)
+        param = tensors[random_key]
+        noise = torch.from_numpy(np.random.normal(-noise_multiplayer, noise_multiplayer, size=param.shape)).float()
+        param += noise
+    save_file(tensors,output_path)  
 
     return "Done."
 
